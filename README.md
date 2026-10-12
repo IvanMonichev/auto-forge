@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Auto Forge
 
-## Getting Started
+Next.js App Router, TypeScript, Zod и Zustand. Архитектура — упрощённый FSD:
+`app`, `widgets`, `entities`, `shared`. Пользовательские сценарии размещаются
+в `widgets`, а предметные сущности — в `entities`.
 
-First, run the development server:
+## Запуск
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Приложение доступно на [localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Структура
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```text
+src/
+├── app/                    # App Router и сборка приложения
+│   ├── _providers/         # Провайдеры приложения
+│   ├── favicon.ico
+│   ├── globals.css         # Глобальные стили
+│   ├── layout.tsx          # Корневой layout
+│   ├── page.module.css     # Стили текущей стартовой страницы
+│   └── page.tsx            # Главный маршрут
+├── widgets/                # Крупные UI-блоки и пользовательские сценарии
+├── entities/               # Предметные сущности
+└── shared/                 # Общий код
+    ├── api/                # Общие средства работы с API
+    ├── config/             # Общая конфигурация
+    ├── lib/                # Утилиты и общие хуки
+    └── ui/                 # Общие UI-компоненты
+```
 
-## Learn More
+Пустые папки сохранены в Git через `.gitkeep`. При появлении кода эти файлы можно
+удалить. Статические файлы, доступные по URL, размещаются в `public/`.
 
-To learn more about Next.js, take a look at the following resources:
+### App
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`src/app` содержит маршруты, layouts, metadata, обработчики маршрутов и композицию
+widgets. Общие провайдеры размещаются в `_providers`; это приватная папка App Router.
+Предметная логика размещается в `entities`, пользовательские сценарии — в `widgets`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Widgets
 
-## Deploy on Vercel
+`src/widgets` содержит самостоятельные блоки интерфейса и пользовательские сценарии.
+Widgets объединяют компоненты и данные из `entities` и используют общий код `shared`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Entities
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`src/entities` содержит предметные сущности: их типы, Zod-схемы, Zustand stores,
+запросы и UI-компоненты. Каждая сущность получает отдельную папку.
+
+### Структура widget или entity
+
+Сегменты создаются по мере надобности:
+
+```text
+widgets/ или entities/
+└── <name>/
+    ├── api/                # Запросы и серверные операции
+    ├── lib/                # Внутренние утилиты
+    ├── model/              # Типы, Zod-схемы, Zustand stores и логика
+    ├── ui/                 # Компоненты и интерфейсы
+    └── index.ts            # Публичные экспорты
+```
+
+### Shared
+
+`shared` содержит код, пригодный для разных предметных областей. Типы, схемы,
+запросы и компоненты конкретной сущности или widget хранятся в их собственных папках.
+
+### Импорты
+
+- Направление зависимостей: `app → widgets → entities → shared`.
+- Каждый слой может напрямую использовать любой слой ниже него.
+- Widgets используют свой внутренний код, `entities` и `shared`.
+- Entities используют свой внутренний код и `shared`.
+- Элементы одного слоя не импортируют друг друга; их композиция выполняется выше.
+- Внешний код импортирует widget или entity через `@/widgets/<name>` или
+  `@/entities/<name>` и соответствующий `index.ts`.
+- Внутри widget или entity используются относительные импорты между сегментами.
+- `shared` не импортирует `app`, `widgets` или `entities`.
+- Для общего кода используются адресные импорты, например `@/shared/lib/...`.
+
+Алиас `@/*` указывает на `src/*`. Компоненты остаются серверными по умолчанию;
+`'use client'` добавляется в файлы, которым нужны клиентские hooks или browser API.
+
+## Команды
+
+| Команда                | Назначение               |
+| ---------------------- | ------------------------ |
+| `npm run dev`          | Сервер разработки        |
+| `npm run build`        | Production-сборка        |
+| `npm run start`        | Запуск Production-сборки |
+| `npm run lint`         | Проверка ESLint          |
+| `npm run format`       | Форматирование Prettier  |
+| `npm run format:check` | Проверка форматирования  |
+
+## Документация
+
+- [Структура проекта Next.js](https://nextjs.org/docs/app/getting-started/project-structure)
+- [Слои FSD](https://feature-sliced.design/docs/reference/layers)
+- [Публичный API FSD](https://feature-sliced.design/docs/reference/public-api)
